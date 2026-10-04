@@ -12,7 +12,6 @@ import { ShoppingBagIcon, UserIcon, HeartIcon } from "@/components/ui/icons";
 import { useCart } from "@/context/cart-context";
 import { useWishlist } from "@/context/wishlist-context";
 import { useAuth } from "@/context/auth-context";
-import { useCMS } from "@/context/cms-context";
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
@@ -21,7 +20,6 @@ export const Navbar: React.FC = () => {
   const { totalItems, toggleCart } = useCart();
   const { totalWishlistItems } = useWishlist();
   const { user, isAuthenticated, logout } = useAuth();
-  const { announcement } = useCMS();
 
   // Track scroll position to enhance backdrop blur on scroll
   useEffect(() => {
@@ -37,25 +35,9 @@ export const Navbar: React.FC = () => {
     return null;
   }
 
-  const showAnnouncement = announcement && announcement.enabled && Boolean(announcement.text);
-
   return (
     <>
       <header className="fixed top-0 inset-x-0 z-40 w-full transition-all duration-300">
-        {/* Top Announcement Bar from CMS */}
-        {showAnnouncement && (
-          <div className="w-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 py-1.5 px-4 text-center text-[11px] sm:text-xs font-medium tracking-wide flex items-center justify-center gap-2 border-b border-zinc-800 dark:border-zinc-200">
-            <span>{announcement.text}</span>
-            {announcement.linkText && (
-              <Link
-                href={announcement.linkHref || "/shop"}
-                className="underline underline-offset-2 hover:opacity-80 transition-opacity font-semibold ml-1 cursor-pointer"
-              >
-                {announcement.linkText}
-              </Link>
-            )}
-          </div>
-        )}
 
         {/* Main navigation bar */}
         <div
@@ -182,7 +164,7 @@ export const Navbar: React.FC = () => {
     </header>
 
     {/* Spacer matching exact fixed header height to prevent content jump */}
-    <div className={`w-full shrink-0 ${showAnnouncement ? "h-[94px] sm:h-[102px]" : "h-16 sm:h-18"}`} aria-hidden="true" />
+    <div className="w-full shrink-0 h-16 sm:h-18" aria-hidden="true" />
   </>
 );
 };
