@@ -88,6 +88,7 @@ export default function ShopPage() {
 
     return result;
   }, [
+    products,
     selectedCategory,
     selectedPriceRange,
     sortBy,
