@@ -155,20 +155,29 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
         <div className="p-3.5 pt-0">
           <div className="pt-2.5 border-t border-zinc-100 dark:border-zinc-800/80">
             {isAuthenticated && user ? (
-              <div className="w-full p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between shadow-2xs">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-7 h-7 rounded-full bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-center font-bold text-[10px] uppercase shrink-0">
+              <div className="w-full p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between shadow-2xs gap-2">
+                <Link
+                  href="/account"
+                  onClick={onClose}
+                  className="flex items-center gap-2 min-w-0 flex-1 group"
+                >
+                  <div className="w-7 h-7 rounded-full bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-center font-bold text-[10px] uppercase shrink-0 ring-1 ring-zinc-300 dark:ring-zinc-700">
                     {user.name.charAt(0)}
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-zinc-950 dark:text-white truncate">
-                      {user.name}
-                    </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs font-bold text-zinc-950 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                        {user.name}
+                      </p>
+                      <span className="px-1 py-0.2 text-[8px] font-mono font-semibold rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 uppercase">
+                        Portal
+                      </span>
+                    </div>
                     <p className="text-[9px] text-zinc-500 truncate">
                       {user.identifier}
                     </p>
                   </div>
-                </div>
+                </Link>
                 <button
                   type="button"
                   onClick={() => {

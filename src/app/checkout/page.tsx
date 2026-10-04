@@ -3,6 +3,8 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/cart-context";
+import { useCMS } from "@/context/cms-context";
+import { AdminOrder } from "@/data/admin-data";
 import { CheckoutFormData } from "@/types";
 import { CheckoutSummary } from "@/components/checkout/checkout-summary";
 import { OrderConfirmation } from "@/components/checkout/order-confirmation";
@@ -10,6 +12,7 @@ import { ShoppingBagIcon, ChevronDownIcon } from "@/components/ui/icons";
 
 export default function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart();
+  const { coupons, addOrder } = useCMS();
 
   // Essential form state
   const [formData, setFormData] = useState<CheckoutFormData>({
@@ -52,13 +55,20 @@ export default function CheckoutPage() {
     formData: CheckoutFormData;
   } | null>(null);
 
-  // Discount calculation
+  // Discount calculation matching active CMS coupons
   const discountAmount = useMemo(() => {
     if (!appliedPromo) return 0;
-    if (appliedPromo === "INSPIRE10" || appliedPromo === "ATELIER10") return Math.round(subtotal * 0.1);
-    if (appliedPromo === "WELCOME20") return Math.round(subtotal * 0.2);
+    const match = coupons.find(
+      (c) => c.code.toUpperCase() === appliedPromo.toUpperCase() && c.active
+    );
+    if (match) {
+      if (match.minSpend && subtotal < match.minSpend) {
+        return 0;
+      }
+      return Math.round((subtotal * match.discountPercent) / 100);
+    }
     return 0;
-  }, [appliedPromo, subtotal]);
+  }, [appliedPromo, subtotal, coupons]);
 
   // Standard delivery fee (৳120)
   const shippingCost = items.length === 0 ? 0 : 120;
@@ -145,8 +155,14 @@ export default function CheckoutPage() {
 
   const handleApplyPromo = (code: string): boolean => {
     const normalized = code.trim().toUpperCase();
-    if (normalized === "INSPIRE10" || normalized === "ATELIER10" || normalized === "WELCOME20") {
-      setAppliedPromo(normalized);
+    const match = coupons.find(
+      (c) => c.code.toUpperCase() === normalized && c.active
+    );
+    if (match) {
+      if (match.minSpend && subtotal < match.minSpend) {
+        return false;
+      }
+      setAppliedPromo(match.code);
       return true;
     }
     return false;
@@ -184,6 +200,48 @@ export default function CheckoutPage() {
 
     setConfirmedOrderId(orderId);
     setOrderPlacementDate(now);
+
+    // Sync newly placed storefront order to Admin CRM database
+    const newAdminOrder: AdminOrder = {
+      id: orderId,
+      customer: {
+        id: `cust-${Date.now()}`,
+        name: formData.fullName,
+        email: formData.email || "guest@inspire.com",
+        phone: formData.phone,
+        avatar: "/avatars/avatar-1.jpg",
+        tier: "First-Time",
+      },
+      items: items.map((it) => ({
+        productId: it.product.id,
+        title: it.product.title,
+        price: it.product.price,
+        quantity: it.quantity,
+        category: it.product.category || "Fashion",
+        size: it.selectedSize || "Standard",
+        color: "Standard",
+        image: it.product.image,
+      })),
+      subtotal,
+      deliveryFee: shippingCost,
+      discount: discountAmount,
+      totalAmount,
+      orderStatus: "pending",
+      paymentStatus: formData.paymentMethod === "cod" ? "unpaid" : "paid",
+      paymentMethod: formData.paymentMethod === "cod" ? "cod" : "card",
+      shippingAddress: `${formData.streetAddress}, ${formData.city}`,
+      shippingCity: formData.city,
+      courier: "Steadfast Courier",
+      createdAt: new Date().toISOString(),
+      timeline: [
+        {
+          title: "Order placed on Storefront",
+          time: "Just now",
+          done: true,
+        },
+      ],
+    };
+    addOrder(newAdminOrder);
 
     setTimeout(() => {
       setIsSubmitting(false);

@@ -1,0 +1,202 @@
+import { CustomerOrder, PatronAddress, PromoVoucher, MembershipPrivilege } from "./types";
+
+export const DEFAULT_PATRON_ORDERS: CustomerOrder[] = [
+  {
+    id: "ord_101",
+    orderNumber: "IL-89218",
+    date: "Oct 02, 2026",
+    status: "in_transit",
+    statusLabel: "In Transit",
+    subtotal: 7650,
+    discount: 500,
+    shippingFee: 0,
+    total: 7150,
+    courier: "Steadfast Express",
+    trackingNumber: "SF-89218042",
+    estimatedDelivery: "Tomorrow by 3:00 PM",
+    shippingAddress: "House 42, Road 11, Block D, Banani, Dhaka 1213",
+    paymentMethod: "bKash Online Payment",
+    paymentStatus: "Paid",
+    items: [
+      {
+        id: "prod_1",
+        name: "Tailored Virgin Wool Blazer",
+        price: 3450,
+        quantity: 1,
+        size: "M",
+        color: "Noir Black",
+        image: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=600&q=80",
+        sku: "VW-BLZ-001-M",
+      },
+      {
+        id: "prod_2",
+        name: "Double-Faced Wool Coat",
+        price: 4200,
+        quantity: 1,
+        size: "L",
+        color: "Ivory Cream",
+        image: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=600&q=80",
+        sku: "DF-COT-004-L",
+      },
+    ],
+    trackingSteps: [
+      {
+        title: "Order Placed & Confirmed",
+        description: "Your sartorial selection was verified and sent to our Dhaka Atelier.",
+        timestamp: "Oct 02, 2026 · 11:20 AM",
+        completed: true,
+      },
+      {
+        title: "Atelier Inspection & Gift Box Packed",
+        description: "Hand-finished, quality inspected, and packaged in signature luxury box.",
+        timestamp: "Oct 03, 2026 · 02:45 PM",
+        completed: true,
+      },
+      {
+        title: "Handed over to Steadfast Express",
+        description: "Consignment dispatched from Tejgaon Fulfillment Hub.",
+        timestamp: "Oct 04, 2026 · 09:30 AM",
+        completed: true,
+        current: true,
+      },
+      {
+        title: "Out for Concierge Delivery",
+        description: "Our dedicated courier will contact you prior to delivery.",
+        timestamp: "Estimated Oct 05, 2026",
+        completed: false,
+      },
+    ],
+  },
+  {
+    id: "ord_102",
+    orderNumber: "IL-86410",
+    date: "Sep 18, 2026",
+    status: "delivered",
+    statusLabel: "Delivered",
+    subtotal: 4000,
+    discount: 0,
+    shippingFee: 0,
+    total: 4000,
+    courier: "Pathao Logistics",
+    trackingNumber: "PT-86410991",
+    estimatedDelivery: "Delivered on Sep 20, 2026",
+    shippingAddress: "House 42, Road 11, Block D, Banani, Dhaka 1213",
+    paymentMethod: "Credit Card (Visa ···· 4242)",
+    paymentStatus: "Paid",
+    items: [
+      {
+        id: "prod_3",
+        name: "Minimalist Cashmere Crewneck",
+        price: 2150,
+        quantity: 1,
+        size: "M",
+        color: "Champagne Gold",
+        image: "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=600&q=80",
+        sku: "MC-CRW-009-M",
+      },
+      {
+        id: "prod_4",
+        name: "Pleated Tencel Wide-Leg Trousers",
+        price: 1850,
+        quantity: 1,
+        size: "M",
+        color: "Charcoal Slate",
+        image: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80",
+        sku: "PT-WLT-012-M",
+      },
+    ],
+    trackingSteps: [
+      {
+        title: "Order Placed & Confirmed",
+        description: "Payment confirmed via Visa card.",
+        timestamp: "Sep 18, 2026 · 04:10 PM",
+        completed: true,
+      },
+      {
+        title: "Quality Check & Dispatch",
+        description: "Inspected and sealed in tamper-proof garment bag.",
+        timestamp: "Sep 19, 2026 · 10:00 AM",
+        completed: true,
+      },
+      {
+        title: "Delivered & Signed",
+        description: "Received by patron at Banani residence.",
+        timestamp: "Sep 20, 2026 · 01:15 PM",
+        completed: true,
+        current: false,
+      },
+    ],
+  },
+];
+
+export const DEFAULT_PATRON_ADDRESSES: PatronAddress[] = [
+  {
+    id: "addr_1",
+    label: "Primary Residence",
+    recipientName: "Farhana Nasrin",
+    phone: "+880 1711-234567",
+    street: "House 42, Road 11, Block D",
+    area: "Banani",
+    city: "Dhaka",
+    postalCode: "1213",
+    isDefault: true,
+  },
+  {
+    id: "addr_2",
+    label: "Creative Atelier / Studio",
+    recipientName: "Farhana Nasrin",
+    phone: "+880 1711-234567",
+    street: "Level 5, Concord Tower, Gulshan Avenue",
+    area: "Gulshan-2",
+    city: "Dhaka",
+    postalCode: "1212",
+    isDefault: false,
+  },
+];
+
+export const DEFAULT_PROMO_VOUCHERS: PromoVoucher[] = [
+  {
+    code: "ATELIER15",
+    discount: "15% OFF",
+    minSpend: "Min. spend ৳5,000",
+    expiry: "Valid till Oct 31, 2026",
+    description: "Exclusive seasonal privilege on all Autumn/Winter bespoke collections.",
+  },
+  {
+    code: "VIPPATRON10",
+    discount: "৳1,000 FLAT",
+    minSpend: "Min. spend ৳6,500",
+    expiry: "Valid till Nov 15, 2026",
+    description: "Loyalty milestone appreciation voucher for Gold & VIP patrons.",
+  },
+  {
+    code: "CONCIERGEFREE",
+    discount: "COMPLIMENTARY SHIPPING",
+    minSpend: "No minimum spend",
+    expiry: "Permanent VIP Privilege",
+    description: "White-glove courier service across all 64 districts in Bangladesh.",
+  },
+];
+
+export const MEMBERSHIP_PRIVILEGES: MembershipPrivilege[] = [
+  {
+    title: "Complimentary Bespoke Alteration",
+    description: "Enjoy tailored adjustments on suits, coats, and silhouettes at our flagship salon.",
+    iconName: "Scissors",
+  },
+  {
+    title: "Private Lookbook Pre-Access",
+    description: "Reserve runway selections and limited editions 48 hours before public drops.",
+    iconName: "Sparkles",
+  },
+  {
+    title: "Priority Dedicated Concierge",
+    description: "Direct WhatsApp and private hotline consultation with your personal fashion advisor.",
+    iconName: "ShieldCheck",
+  },
+  {
+    title: "White-Glove Doorstep Delivery",
+    description: "Express priority courier dispatch with zero shipping fees nationwide.",
+    iconName: "Truck",
+  },
+];

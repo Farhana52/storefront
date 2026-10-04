@@ -8,6 +8,7 @@ import { SearchProvider } from "@/context/search-context";
 import { pullSync } from "@/services/store-sync";
 
 import { AuthProvider } from "@/context/auth-context";
+import { CMSProvider } from "@/context/cms-context";
 
 export const Providers: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
@@ -31,15 +32,17 @@ export const Providers: React.FC<{ children: React.ReactNode }> = ({ children })
 
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <CartProvider>
-          <WishlistProvider>
-            <SearchProvider>
-              {children}
-            </SearchProvider>
-          </WishlistProvider>
-        </CartProvider>
-      </AuthProvider>
+      <CMSProvider>
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <SearchProvider>
+                {children}
+              </SearchProvider>
+            </WishlistProvider>
+          </CartProvider>
+        </AuthProvider>
+      </CMSProvider>
     </ThemeProvider>
   );
 };

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { BrandLogo } from "@/components/navbar/brand-logo";
 import { NavLinks } from "@/components/navbar/nav-links";
 import { MobileMenu } from "@/components/navbar/mobile-menu";
@@ -11,26 +12,51 @@ import { ShoppingBagIcon, UserIcon, HeartIcon } from "@/components/ui/icons";
 import { useCart } from "@/context/cart-context";
 import { useWishlist } from "@/context/wishlist-context";
 import { useAuth } from "@/context/auth-context";
+import { useCMS } from "@/context/cms-context";
 
 export const Navbar: React.FC = () => {
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { totalItems, toggleCart } = useCart();
   const { totalWishlistItems } = useWishlist();
   const { user, isAuthenticated, logout } = useAuth();
+  const { announcement } = useCMS();
 
   // Track scroll position to enhance backdrop blur on scroll
   useEffect(() => {
+    if (pathname?.startsWith("/admin")) return;
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [pathname]);
+
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
+
+  const showAnnouncement = announcement && announcement.enabled && Boolean(announcement.text);
 
   return (
     <>
       <header className="fixed top-0 inset-x-0 z-40 w-full transition-all duration-300">
+        {/* Top Announcement Bar from CMS */}
+        {showAnnouncement && (
+          <div className="w-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 py-1.5 px-4 text-center text-[11px] sm:text-xs font-medium tracking-wide flex items-center justify-center gap-2 border-b border-zinc-800 dark:border-zinc-200">
+            <span>{announcement.text}</span>
+            {announcement.linkText && (
+              <Link
+                href={announcement.linkHref || "/shop"}
+                className="underline underline-offset-2 hover:opacity-80 transition-opacity font-semibold ml-1 cursor-pointer"
+              >
+                {announcement.linkText}
+              </Link>
+            )}
+          </div>
+        )}
+
         {/* Main navigation bar */}
         <div
           className={`w-full transition-all duration-300 border-b ${
@@ -99,10 +125,17 @@ export const Navbar: React.FC = () => {
             {/* User Profile / Sign In Button (Desktop) */}
             {isAuthenticated && user ? (
               <div className="hidden sm:flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-700">
+                <Link
+                  href="/account"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-700 transition-colors shadow-2xs group"
+                  title="Open Patron Portal & Wardrobe"
+                >
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="max-w-[100px] truncate">{user.name.split(" ")[0]}</span>
-                </span>
+                  <span className="text-[10px] text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 font-mono">
+                    Portal
+                  </span>
+                </Link>
                 <button
                   type="button"
                   onClick={logout}
@@ -149,7 +182,7 @@ export const Navbar: React.FC = () => {
     </header>
 
     {/* Spacer matching exact fixed header height to prevent content jump */}
-    <div className="h-16 sm:h-18 w-full shrink-0" aria-hidden="true" />
+    <div className={`w-full shrink-0 ${showAnnouncement ? "h-[94px] sm:h-[102px]" : "h-16 sm:h-18"}`} aria-hidden="true" />
   </>
 );
 };

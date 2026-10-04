@@ -3,8 +3,8 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MOCK_PRODUCTS } from "@/data/mock-products";
 import { useWishlist } from "@/context/wishlist-context";
+import { useCMS } from "@/context/cms-context";
 import {
   HeartIcon,
   FilterIcon,
@@ -12,15 +12,6 @@ import {
   CheckIcon,
 } from "@/components/ui/icons";
 import { AddToCartButton } from "@/components/ui/add-to-cart-button";
-
-const CATEGORIES = [
-  "All",
-  "Fashion",
-  "Hijab",
-  "Beauty",
-  "Accessories",
-  "Collections",
-];
 
 const PRICE_RANGES = [
   { id: "all", label: "All Prices" },
@@ -39,6 +30,12 @@ const SORT_OPTIONS = [
 ];
 
 export default function ShopPage() {
+  const { products, categories: cmsCategories } = useCMS();
+  const categoriesList = useMemo(
+    () => ["All", ...cmsCategories.map((c) => c.name)],
+    [cmsCategories]
+  );
+
   // State management for filters and sorting
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedPriceRange, setSelectedPriceRange] = useState<string>("all");
@@ -61,9 +58,9 @@ export default function ShopPage() {
     setSortBy("featured");
   };
 
-  // Pure client-side filtering and sorting of mock products
+  // Pure client-side filtering and sorting of products
   const filteredProducts = useMemo(() => {
-    let result = [...MOCK_PRODUCTS];
+    let result = [...products];
 
     if (selectedCategory !== "All") {
       result = result.filter((p) => p.category === selectedCategory);
@@ -105,7 +102,7 @@ export default function ShopPage() {
           Category
         </h3>
         <div className="space-y-1.5">
-          {CATEGORIES.map((cat) => {
+          {categoriesList.map((cat) => {
             const isSelected = selectedCategory === cat;
             return (
               <button

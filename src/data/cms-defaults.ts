@@ -1,0 +1,210 @@
+import {
+  HeroSlide,
+  AnnouncementConfig,
+  FooterConfig,
+  CouponConfig,
+  CategoryItem,
+  ProductReview,
+  VariationSize,
+  VariationColor,
+} from "@/types/cms";
+
+export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
+  {
+    id: "autumn-winter",
+    badge: "Autumn / Winter '26",
+    title: "Curated Wardrobe Collection",
+    description: "Hand-finished double-face virgin wool, pure cashmere, and sculpted tailoring.",
+    ctaText: "Shop Collection",
+    href: "/shop",
+    image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1400&auto=format&fit=crop",
+    alt: "Autumn fashion showcase with premium outerwear",
+    active: true,
+  },
+  {
+    id: "minimalist-artisan",
+    badge: "Signature Editorial",
+    title: "Contemporary Style & Elegance",
+    description: "Monochrome aesthetics with tactile natural fibers engineered for modern living.",
+    ctaText: "Explore Lookbook",
+    href: "/shop",
+    image: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=1400&auto=format&fit=crop",
+    alt: "Minimalist fashion editorial showcase",
+    active: true,
+  },
+  {
+    id: "festive-splendor",
+    badge: "Heritage Edition",
+    title: "Artisanal Heritage & Festive Edition",
+    description: "Curated ensembles crafted with authentic heritage embroidery and timeless elegance.",
+    ctaText: "Explore Edition",
+    href: "/shop",
+    image: "/banners/hero-festive.jpg",
+    alt: "Artisanal fashion showcase with embroidered heritage collection",
+    active: true,
+  },
+  {
+    id: "casual-luxe",
+    badge: "Everyday Luxury",
+    title: "Urban Casuals & Everyday Fashion",
+    description: "Effortless chinos, structured shirts, and fine knitwear for seamless everyday wear.",
+    ctaText: "Discover More",
+    href: "/shop",
+    image: "/banners/lifestyle-casual.jpg",
+    alt: "Everyday luxury casual fashion showcase",
+    active: true,
+  },
+];
+
+export const DEFAULT_ANNOUNCEMENT: AnnouncementConfig = {
+  enabled: true,
+  text: "Complimentary Concierge Delivery Across Bangladesh on Orders Over ৳5,000",
+  linkText: "Explore Collection",
+  linkHref: "/shop",
+};
+
+export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
+  brandName: "INSPIRE LIFESTYLE",
+  tagline: "Curated architectural garments, knitwear, and lifestyle goods designed with enduring proportion and tactile luxury.",
+  phone: "+880 1800-000000",
+  email: "support@inspirelifestyle.com",
+  address: "Road 11, Block D, Banani, Dhaka-1213",
+  copyright: `© ${new Date().getFullYear()} INSPIRE LIFESTYLE. All rights reserved.`,
+};
+
+export const DEFAULT_COUPONS: CouponConfig[] = [
+  {
+    id: "c-1",
+    code: "INSPIRE10",
+    discountPercent: 10,
+    description: "10% off on all luxury apparel",
+    active: true,
+    minSpend: 3000,
+  },
+  {
+    id: "c-2",
+    code: "VIPATELIER",
+    discountPercent: 15,
+    description: "Exclusive 15% VIP Patron Privilege discount",
+    active: true,
+    minSpend: 6000,
+  },
+  {
+    id: "c-3",
+    code: "RAMADAN26",
+    discountPercent: 12,
+    description: "Festive season special privilege",
+    active: true,
+    minSpend: 4000,
+  },
+];
+
+export const DEFAULT_CATEGORIES: CategoryItem[] = [
+  {
+    id: "cat-fashion",
+    name: "Fashion",
+    slug: "fashion",
+    description: "Contemporary silhouettes, outerwear, and artisanal tailoring",
+    image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?q=80&w=900&auto=format&fit=crop",
+    featured: true,
+  },
+  {
+    id: "cat-hijab",
+    name: "Hijab",
+    slug: "hijab",
+    description: "Pure modal, organic georgette, and breathable linen wraps",
+    image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=900&auto=format&fit=crop",
+    featured: true,
+  },
+  {
+    id: "cat-beauty",
+    name: "Beauty",
+    slug: "beauty",
+    description: "Ethical botanical skincare and signature eau de parfum",
+    image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=900&auto=format&fit=crop",
+    featured: true,
+  },
+  {
+    id: "cat-accessories",
+    name: "Accessories",
+    slug: "accessories",
+    description: "Artisanal jewelry, handcrafted leather bags, and adornments",
+    image: "https://images.unsplash.com/photo-1509319117193-57bab727e09d?q=80&w=900&auto=format&fit=crop",
+    featured: false,
+  },
+];
+
+export const DEFAULT_REVIEWS: ProductReview[] = [
+  {
+    id: "rev-1",
+    productId: "1",
+    productTitle: "Handmade Festive Gown",
+    authorName: "Sadia Rahman",
+    authorEmail: "sadia.rahman@example.com",
+    rating: 5,
+    title: "Pure elegance & tailored perfection",
+    comment: "The craftsmanship and fabric weight exceeded my expectations. Elegant and bespoke fit for family festivities!",
+    createdAt: "2026-09-28",
+    status: "approved",
+    verifiedPurchase: true,
+  },
+  {
+    id: "rev-2",
+    productId: "2",
+    productTitle: "Royal Embroidered Kameez",
+    authorName: "Nusrat Jahan",
+    authorEmail: "nusrat.jahan@example.com",
+    rating: 5,
+    title: "Sublime texture",
+    comment: "Sublime texture. The stitch quality on the cuffs is remarkably detailed. Received compliments all evening.",
+    createdAt: "2026-10-01",
+    status: "approved",
+    verifiedPurchase: true,
+  },
+  {
+    id: "rev-3",
+    productId: "3",
+    productTitle: "Premium Chiffon Hijab",
+    authorName: "Ayesha Siddiqua",
+    authorEmail: "ayesha.s@example.com",
+    rating: 4,
+    title: "Lightweight and breathable",
+    comment: "Drapes gracefully and doesn't slip throughout the day. Very pleased with the subtle sheen.",
+    createdAt: "2026-10-02",
+    status: "approved",
+    verifiedPurchase: true,
+  },
+  {
+    id: "rev-4",
+    productId: "5",
+    productTitle: "Pure Rose Oil Elixir",
+    authorName: "Tasnim Ahmed",
+    authorEmail: "tasnim.ahmed@example.com",
+    rating: 5,
+    title: "Holy grail skincare",
+    comment: "Divine fragrance, absorbs swiftly leaving skin supple without grease. A true staple in my routine.",
+    createdAt: "2026-10-03",
+    status: "approved",
+    verifiedPurchase: true,
+  },
+];
+
+export const DEFAULT_SIZES: VariationSize[] = [
+  { id: "size-xs", name: "Extra Small", code: "XS", description: "Chest 34-36 in · Waist 28-30 in", active: true },
+  { id: "size-s", name: "Small", code: "S", description: "Chest 36-38 in · Waist 30-32 in", active: true },
+  { id: "size-m", name: "Medium", code: "M", description: "Chest 38-40 in · Waist 32-34 in", active: true },
+  { id: "size-l", name: "Large", code: "L", description: "Chest 40-42 in · Waist 34-36 in", active: true },
+  { id: "size-xl", name: "Extra Large", code: "XL", description: "Chest 42-44 in · Waist 36-38 in", active: true },
+  { id: "size-xxl", name: "Double Extra Large", code: "XXL", description: "Chest 44-46 in · Waist 38-40 in", active: true },
+  { id: "size-free", name: "Free Size", code: "Free Size", description: "Universal draped atelier silhouette", active: true },
+];
+
+export const DEFAULT_COLORS: VariationColor[] = [
+  { id: "col-noir", name: "Noir Black", hex: "#18181b", description: "Deep midnight jet black textile", active: true },
+  { id: "col-ivory", name: "Ivory Cream", hex: "#f5f5f0", description: "Luminous unbleached silk and organic cotton", active: true },
+  { id: "col-navy", name: "Midnight Navy", hex: "#1e293b", description: "Regal deep maritime navy hue", active: true },
+  { id: "col-gold", name: "Champagne Gold", hex: "#d4af37", description: "Warm metallic gold thread accent", active: true },
+  { id: "col-sage", name: "Olive Sage", hex: "#556b2f", description: "Earthy botanical moss green finish", active: true },
+  { id: "col-wine", name: "Burgundy Wine", hex: "#722f37", description: "Rich imperial crimson tone", active: true },
+  { id: "col-rose", name: "Dusty Rose", hex: "#dcae96", description: "Muted romantic blush pastel", active: true },
+];

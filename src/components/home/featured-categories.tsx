@@ -12,62 +12,51 @@ interface CategoryItem {
   href: string;
 }
 
-// Popular e-commerce category mock data matching user specifications
-const POPULAR_CATEGORIES: CategoryItem[] = [
+import { useCMS } from "@/context/cms-context";
+
+// Fallback category items
+const FALLBACK_CATEGORIES: CategoryItem[] = [
   {
-    id: "mens-chino-pant",
-    title: "Men’s Chino Pant",
-    image: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?q=80&w=600&auto=format&fit=crop",
-    href: "/shop",
+    id: "fashion",
+    title: "Fashion & Tailoring",
+    image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?q=80&w=900&auto=format&fit=crop",
+    href: "/shop?category=Fashion",
   },
   {
-    id: "hair-dryers",
-    title: "Hair Dryers",
-    image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=600&auto=format&fit=crop",
-    href: "/shop",
+    id: "hijab",
+    title: "Hijab & Scarves",
+    image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=900&auto=format&fit=crop",
+    href: "/shop?category=Hijab",
   },
   {
-    id: "mens-panjabi",
-    title: "Men’s Panjabi",
-    image: "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=600&auto=format&fit=crop",
-    href: "/shop",
+    id: "beauty",
+    title: "Beauty & Botanical",
+    image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=900&auto=format&fit=crop",
+    href: "/shop?category=Beauty",
   },
   {
-    id: "womens-bottom-wear",
-    title: "Women’s Bottom Wear",
-    image: "https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=600&auto=format&fit=crop",
-    href: "/shop",
-  },
-  {
-    id: "mens-casual-shirt",
-    title: "Men’s Casual Shirt",
-    image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=600&auto=format&fit=crop",
-    href: "/shop",
-  },
-  {
-    id: "footwear",
-    title: "Footwear",
-    image: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?q=80&w=600&auto=format&fit=crop",
-    href: "/shop",
-  },
-  {
-    id: "mens-polo",
-    title: "Men’s Polo",
-    image: "https://images.unsplash.com/photo-1581655353564-df123a1eb820?q=80&w=600&auto=format&fit=crop",
-    href: "/shop",
-  },
-  {
-    id: "winter-collection",
-    title: "Winter Collection",
-    image: "https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=600&auto=format&fit=crop",
-    href: "/shop",
+    id: "accessories",
+    title: "Jewelry & Leather",
+    image: "https://images.unsplash.com/photo-1509319117193-57bab727e09d?q=80&w=900&auto=format&fit=crop",
+    href: "/shop?category=Accessories",
   },
 ];
 
 export const FeaturedCategories: React.FC = () => {
+  const { categories } = useCMS();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const displayCategories =
+    categories && categories.length > 0
+      ? categories.map((c) => ({
+          id: c.id,
+          title: c.name,
+          image: c.image || "/products/festive-gown.jpg",
+          href: `/shop?category=${encodeURIComponent(c.name)}`,
+        }))
+      : FALLBACK_CATEGORIES;
 
   // Monitor scroll position to update navigation arrow states
   const updateScrollState = useCallback(() => {
@@ -136,7 +125,7 @@ export const FeaturedCategories: React.FC = () => {
         onScroll={updateScrollState}
         className="flex items-start gap-4 sm:gap-5 lg:gap-6 overflow-x-auto no-scrollbar scroll-smooth py-2 px-1"
       >
-        {POPULAR_CATEGORIES.map((cat) => (
+        {displayCategories.map((cat) => (
           <Link
             key={cat.id}
             href={cat.href}

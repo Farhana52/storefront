@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useCart } from "@/context/cart-context";
 import {
   CloseIcon,
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/icons";
 
 export const CartDrawer: React.FC = () => {
+  const pathname = usePathname();
   const {
     items,
     isOpen,
@@ -43,6 +45,10 @@ export const CartDrawer: React.FC = () => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, closeCart]);
+
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <>
