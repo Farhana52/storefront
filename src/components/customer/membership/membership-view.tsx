@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Crown,
@@ -11,10 +11,45 @@ import {
   Copy,
   Check,
 } from "lucide-react";
-import { DEFAULT_PROMO_VOUCHERS, MEMBERSHIP_PRIVILEGES } from "../mock-data";
+import { MEMBERSHIP_PRIVILEGES } from "../mock-data";
+import { PromoVoucher } from "../types";
 
 export const MembershipView: React.FC = () => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [vouchers, setVouchers] = useState<PromoVoucher[]>([]);
+
+  useEffect(() => {
+    async function loadVouchers() {
+      try {
+        const res = await fetch("/api/coupons");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.coupons) && data.coupons.length > 0) {
+            setVouchers(
+              data.coupons
+                .filter((c: { active: boolean }) => c.active)
+                .map((c: {
+                  code: string;
+                  discount: string;
+                  minSpend?: string;
+                  expiry?: string;
+                  description?: string;
+                }) => ({
+                  code: c.code,
+                  discount: c.discount,
+                  minSpend: c.minSpend || "No minimum spend",
+                  expiry: c.expiry || "Permanent VIP Privilege",
+                  description: c.description || "Exclusive VIP patron discount.",
+                }))
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load vouchers from DB:", err);
+      }
+    }
+    loadVouchers();
+  }, []);
 
   const handleCopy = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -101,87 +136,85 @@ export const MembershipView: React.FC = () => {
           </h3>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {MEMBERSHIP_PRIVILEGES.map((privilege, idx) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {MEMBERSHIP_PRIVILEGES.map((privilege, i) => (
             <div
-              key={idx}
-              className="p-5 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 space-y-2.5 shadow-xs"
+              key={i}
+              className="p-5 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-start gap-4 shadow-xs"
             >
-              <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
                 {getPrivilegeIcon(privilege.iconName)}
               </div>
-              <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-50">
-                {privilege.title}
-              </h4>
-              <p className="text-[11px] text-zinc-600 dark:text-zinc-300 leading-relaxed font-sans">
-                {privilege.description}
-              </p>
+              <div className="space-y-1">
+                <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                  {privilege.title}
+                </h4>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  {privilege.description}
+                </p>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Active Promo Vouchers Section */}
+      {/* Active VIP Vouchers & Privileges */}
       <div className="space-y-4">
         <div>
           <h3 className="text-base font-bold tracking-tight text-zinc-950 dark:text-white">
-            Active Vouchers
+            Available Vouchers & Privilege Codes
           </h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {DEFAULT_PROMO_VOUCHERS.map((voucher) => {
-            const isCopied = copiedCode === voucher.code;
-
-            return (
-              <div
-                key={voucher.code}
-                className="p-5 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900/80 flex flex-col justify-between space-y-4 shadow-2xs"
-              >
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold font-mono text-amber-600 dark:text-amber-400">
-                      {voucher.discount}
-                    </span>
-                    <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-400">
-                      {voucher.expiry}
-                    </span>
-                  </div>
-                  <p className="text-xs text-zinc-700 dark:text-zinc-200">
-                    {voucher.description}
-                  </p>
-                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
-                    {voucher.minSpend}
-                  </p>
-                </div>
-
-                <div className="pt-2 flex items-center justify-between gap-2 border-t border-zinc-200/60 dark:border-zinc-800">
-                  <span className="font-mono text-xs font-bold text-zinc-900 dark:text-white tracking-wider">
-                    {voucher.code}
+          {vouchers.map((voucher) => (
+            <div
+              key={voucher.code}
+              className="p-5 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 flex flex-col justify-between gap-4 shadow-xs"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded-md">
+                    {voucher.discount}
                   </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopy(voucher.code)}
-                    className="h-7 px-2 text-[11px] gap-1 cursor-pointer"
-                    aria-label={`Copy coupon code ${voucher.code}`}
-                  >
-                    {isCopied ? (
-                      <>
-                        <Check className="w-3 h-3 text-emerald-500" />
-                        <span className="text-emerald-500 font-semibold">Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3 h-3 text-zinc-500" />
-                        <span>Copy Code</span>
-                      </>
-                    )}
-                  </Button>
+                  <span className="text-[10px] font-mono text-zinc-400">
+                    {voucher.expiry}
+                  </span>
                 </div>
+                <h4 className="text-xs font-bold text-zinc-900 dark:text-white font-mono">
+                  {voucher.code}
+                </h4>
+                <p className="text-xs text-zinc-500 line-clamp-2">
+                  {voucher.description}
+                </p>
               </div>
-            );
-          })}
+
+              <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-2">
+                <span className="text-[10px] text-zinc-400 font-mono">
+                  {voucher.minSpend}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleCopy(voucher.code)}
+                  className="h-7 px-2.5 text-[10px] font-mono gap-1 cursor-pointer"
+                >
+                  {copiedCode === voucher.code ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-500" />
+                      <span>Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

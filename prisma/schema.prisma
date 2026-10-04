@@ -1,0 +1,223 @@
+// Prisma schema for luxury storefront and atelier management platform
+// Connected to Neon PostgreSQL pooler over SSL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id               String          @id @default(cuid())
+  name             String
+  email            String?         @unique
+  phone            String?         @unique
+  role             String          @default("customer") // customer | admin | vip
+  tier             String          @default("VIP Patron")
+  passwordHash     String?
+  avatar           String?
+  preferredSize    String?         @default("M")
+  notifySms        Boolean         @default(true)
+  notifyWhatsapp   Boolean         @default(true)
+  notifyNewsletter Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  addresses        Address[]
+  orders           Order[]
+  reviews          Review[]
+  cartItems        CartItem[]
+  wishlistItems    WishlistItem[]
+
+  @@index([email])
+  @@index([phone])
+}
+
+model Address {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label         String
+  recipientName String
+  phone         String
+  street        String
+  area          String
+  city          String
+  postalCode    String
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  count     Int       @default(0)
+  image     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products  Product[]
+}
+
+model Product {
+  id             String         @id @default(cuid())
+  title          String
+  subtitle       String?
+  description    String?
+  price          Float
+  compareAtPrice Float?
+  category       String
+  categoryId     String?
+  categoryRel    Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  image          String
+  gallery        String[]       @default([])
+  tag            String?
+  rating         Float          @default(5.0)
+  reviewsCount   Int            @default(0)
+  inStock        Boolean        @default(true)
+  stockCount     Int            @default(50)
+  sku            String?        @unique
+  sizes          String[]       @default([])
+  colors         Json?          @default("[]")
+  specifications Json?          @default("{}")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  orderItems     OrderItem[]
+  reviews        Review[]
+  cartItems      CartItem[]
+  wishlistItems  WishlistItem[]
+
+  @@index([category])
+  @@index([inStock])
+}
+
+model Order {
+  id                String      @id @default(cuid())
+  orderNumber       String      @unique
+  userId            String?
+  user              User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  customerName      String
+  customerEmail     String?
+  customerPhone     String
+  subtotal          Float
+  deliveryFee       Float       @default(0)
+  discount          Float       @default(0)
+  totalAmount       Float
+  paymentMethod     String      @default("card")
+  paymentStatus     String      @default("unpaid")
+  orderStatus       String      @default("pending")
+  statusLabel       String?     @default("Pending Confirmation")
+  shippingAddress   String
+  shippingCity      String      @default("Dhaka")
+  courier           String      @default("Steadfast Express")
+  trackingCode      String?
+  estimatedDelivery String?
+  notes             String?
+  timeline          Json?       @default("[]")
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  items             OrderItem[]
+
+  @@index([userId])
+  @@index([orderStatus])
+  @@index([orderNumber])
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  title     String
+  price     Float
+  quantity  Int      @default(1)
+  size      String?
+  color     String?
+  image     String?
+  sku       String?
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Coupon {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  discount    String
+  minSpend    String?
+  expiry      String?
+  description String?
+  active      Boolean  @default(true)
+  usedCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  author    String
+  rating    Int
+  title     String?
+  comment   String
+  verified  Boolean  @default(true)
+  status    String   @default("approved") // approved | pending | hidden
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([userId])
+}
+
+model StoreSetting {
+  id           String   @id @default("global_cms")
+  heroSlides   Json?    @default("[]")
+  announcement Json?    @default("{}")
+  footerConfig Json?    @default("{}")
+  sizes        Json?    @default("[]")
+  colors       Json?    @default("[]")
+  updatedAt    DateTime @updatedAt
+}
+
+model CartItem {
+  id           String   @id @default(cuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestId      String?
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity     Int      @default(1)
+  selectedSize String?
+  selectedColor String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@index([guestId])
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestId   String?
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([guestId])
+}

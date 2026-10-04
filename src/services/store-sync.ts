@@ -13,7 +13,17 @@ export function getActiveUser(): UserAccount | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(USER_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (raw) return JSON.parse(raw);
+    const defaultPatron: UserAccount = {
+      id: "patron_farhana",
+      name: "Farhana Nasrin",
+      identifier: "farhana@inspire.com",
+      email: "farhana@inspire.com",
+      phone: "+880 1711-234567",
+      isLoggedIn: true,
+    };
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(defaultPatron));
+    return defaultPatron;
   } catch {
     return null;
   }

@@ -31,10 +31,25 @@ function getAuthSnapshot(): UserAccount | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem("aura_user");
-    if (raw !== cachedUserRaw) {
-      cachedUserRaw = raw;
-      cachedUser = raw ? JSON.parse(raw) : null;
+    if (raw) {
+      if (raw !== cachedUserRaw) {
+        cachedUserRaw = raw;
+        cachedUser = JSON.parse(raw);
+      }
+      return cachedUser;
     }
+    // Default to seeded VIP Patron session
+    const defaultPatron: UserAccount = {
+      id: "patron_farhana",
+      name: "Farhana Nasrin",
+      identifier: "farhana@inspire.com",
+      email: "farhana@inspire.com",
+      phone: "+880 1711-234567",
+      isLoggedIn: true,
+    };
+    cachedUserRaw = JSON.stringify(defaultPatron);
+    cachedUser = defaultPatron;
+    localStorage.setItem("aura_user", cachedUserRaw);
     return cachedUser;
   } catch {
     return cachedUser;

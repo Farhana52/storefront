@@ -181,7 +181,7 @@ export default function CheckoutPage() {
     }
 
     setIsSubmitting(true);
-    const orderId = `#ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+    const orderNumber = `IL-${Math.floor(10000 + Math.random() * 90000)}`;
     const now = new Date().toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -198,57 +198,50 @@ export default function CheckoutPage() {
       formData: { ...formData },
     });
 
-    setConfirmedOrderId(orderId);
+    setConfirmedOrderId(orderNumber);
     setOrderPlacementDate(now);
 
-    // Sync newly placed storefront order to Admin CRM database
-    const newAdminOrder: AdminOrder = {
-      id: orderId,
-      customer: {
-        id: `cust-${Date.now()}`,
-        name: formData.fullName,
-        email: formData.email || "guest@inspire.com",
-        phone: formData.phone,
-        avatar: "/avatars/avatar-1.jpg",
-        tier: "First-Time",
-      },
-      items: items.map((it) => ({
-        productId: it.product.id,
-        title: it.product.title,
-        price: it.product.price,
-        quantity: it.quantity,
-        category: it.product.category || "Fashion",
-        size: it.selectedSize || "Standard",
-        color: "Standard",
-        image: it.product.image,
-      })),
-      subtotal,
-      deliveryFee: shippingCost,
-      discount: discountAmount,
-      totalAmount,
-      orderStatus: "pending",
-      paymentStatus: formData.paymentMethod === "cod" ? "unpaid" : "paid",
-      paymentMethod: formData.paymentMethod === "cod" ? "cod" : "card",
-      shippingAddress: `${formData.streetAddress}, ${formData.city}`,
-      shippingCity: formData.city,
-      courier: "Steadfast Courier",
-      createdAt: new Date().toISOString(),
-      timeline: [
-        {
-          title: "Order placed on Storefront",
-          time: "Just now",
-          done: true,
-        },
-      ],
-    };
-    addOrder(newAdminOrder);
-
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsOrderPlaced(true);
-      clearCart();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }, 800);
+    // Save order directly into Neon PostgreSQL database via API
+    fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        customerName: formData.fullName,
+        customerEmail: formData.email || null,
+        customerPhone: formData.phone,
+        subtotal,
+        deliveryFee: shippingCost,
+        discount: discountAmount,
+        totalAmount,
+        paymentMethod: formData.paymentMethod,
+        paymentStatus: formData.paymentMethod === "cod" ? "unpaid" : "paid",
+        shippingAddress: `${formData.streetAddress}, ${formData.city}`,
+        shippingCity: formData.city,
+        courier: "Steadfast Express",
+        items: items.map((it) => ({
+          productId: it.product.id,
+          title: it.product.title,
+          price: it.product.price,
+          quantity: it.quantity,
+          size: it.selectedSize || "Standard",
+          color: it.selectedColor || "Standard",
+          image: it.product.image,
+        })),
+      }),
+    })
+      .then((res) => res.json())
+      .then((createdOrder) => {
+        if (createdOrder.orderNumber) {
+          setConfirmedOrderId(createdOrder.orderNumber);
+        }
+      })
+      .catch((e) => console.error("Order persistence failed:", e))
+      .finally(() => {
+        setIsSubmitting(false);
+        setIsOrderPlaced(true);
+        clearCart();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
   };
 
   return (

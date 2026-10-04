@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import {
   HeroSlide,
   AnnouncementConfig,
@@ -22,7 +22,6 @@ import {
   DEFAULT_SIZES,
   DEFAULT_COLORS,
 } from "@/data/cms-defaults";
-import { MOCK_PRODUCTS } from "@/data/mock-products";
 import {
   MOCK_ORDERS,
   MOCK_CUSTOMERS,
@@ -91,13 +90,13 @@ interface CMSContextType {
   updateColor: (id: string, updates: Partial<VariationColor>) => void;
   deleteColor: (id: string) => void;
 
+  // Reload from database
+  refreshDatabase: () => Promise<void>;
   // Reset
   resetToDefaults: () => void;
 }
 
 const CMSContext = createContext<CMSContextType | undefined>(undefined);
-
-const CMS_STORAGE_KEY = "inspire_cms_store_v3";
 
 export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(DEFAULT_HERO_SLIDES);
@@ -106,80 +105,197 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [coupons, setCoupons] = useState<CouponConfig[]>(DEFAULT_COUPONS);
   const [categories, setCategories] = useState<CategoryItem[]>(DEFAULT_CATEGORIES);
   const [reviews, setReviews] = useState<ProductReview[]>(DEFAULT_REVIEWS);
-  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>(MOCK_ORDERS);
   const [customers, setCustomers] = useState<AdminCustomer[]>(MOCK_CUSTOMERS);
   const [sizes, setSizes] = useState<VariationSize[]>(DEFAULT_SIZES);
   const [colors, setColors] = useState<VariationColor[]>(DEFAULT_COLORS);
-  const [mounted, setMounted] = useState(false);
 
-  // Load from localStorage on client mount
-  useEffect(() => {
+  // Fetch real data from Neon PostgreSQL database on mount
+  const refreshDatabase = useCallback(async () => {
     try {
-      const stored = localStorage.getItem(CMS_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.heroSlides) setHeroSlides(parsed.heroSlides);
-        if (parsed.announcement) setAnnouncement(parsed.announcement);
-        if (parsed.footerConfig) setFooterConfig(parsed.footerConfig);
-        if (parsed.coupons) setCoupons(parsed.coupons);
-        if (parsed.categories) setCategories(parsed.categories);
-        if (parsed.reviews) setReviews(parsed.reviews);
-        if (parsed.products) setProducts(parsed.products);
-        if (parsed.orders) setOrders(parsed.orders);
-        if (parsed.customers) setCustomers(parsed.customers);
-        if (parsed.sizes) setSizes(parsed.sizes);
-        if (parsed.colors) setColors(parsed.colors);
+      // 1. Fetch live products
+      const prodRes = await fetch("/api/products");
+      if (prodRes.ok) {
+        const prodData = await prodRes.json();
+        if (Array.isArray(prodData.products) && prodData.products.length > 0) {
+          setProducts(prodData.products);
+        }
       }
-    } catch {
-      // Fallback to defaults on parse error
+
+      // 2. Fetch live categories
+      const catRes = await fetch("/api/categories");
+      if (catRes.ok) {
+        const catData = await catRes.json();
+        if (Array.isArray(catData) && catData.length > 0) {
+          setCategories(catData);
+        }
+      }
+
+      // 3. Fetch live orders
+      const orderRes = await fetch("/api/orders");
+      if (orderRes.ok) {
+        const orderData = await orderRes.json();
+        if (Array.isArray(orderData.orders) && orderData.orders.length > 0) {
+          // Format into AdminOrder
+          const formattedOrders: AdminOrder[] = orderData.orders.map((ord: {
+            id: string;
+            orderNumber: string;
+            customerName: string;
+            customerEmail: string | null;
+            customerPhone: string;
+            subtotal: number;
+            deliveryFee: number;
+            discount: number;
+            totalAmount: number;
+            paymentMethod: string;
+            paymentStatus: string;
+            orderStatus: string;
+            createdAt: string;
+            shippingAddress: string;
+            shippingCity: string;
+            courier: string;
+            trackingCode?: string;
+            estimatedDelivery?: string;
+            notes?: string;
+            timeline?: Array<{ title: string; time: string; done: boolean; note?: string }>;
+            items: Array<{
+              productId?: string;
+              title: string;
+              price: number;
+              quantity: number;
+              size?: string;
+              color?: string;
+              image?: string;
+            }>;
+            user?: {
+              id: string;
+              name: string;
+              email: string;
+              phone: string;
+              avatar?: string;
+              tier?: string;
+            };
+          }) => ({
+            id: ord.id,
+            customer: {
+              id: ord.user?.id || ord.id,
+              name: ord.user?.name || ord.customerName,
+              email: ord.user?.email || ord.customerEmail || "",
+              phone: ord.user?.phone || ord.customerPhone,
+              avatar: ord.user?.avatar || "",
+              tier: (ord.user?.tier as AdminOrder["customer"]["tier"]) || "VIP Patron",
+            },
+            items: (ord.items || []).map((it) => ({
+              productId: it.productId || "prod-item",
+              title: it.title,
+              image: it.image || "",
+              category: "Fashion",
+              price: it.price,
+              quantity: it.quantity,
+              size: it.size || undefined,
+              color: it.color || undefined,
+            })),
+            subtotal: ord.subtotal,
+            deliveryFee: ord.deliveryFee,
+            discount: ord.discount,
+            totalAmount: ord.totalAmount,
+            paymentMethod: ord.paymentMethod as AdminOrder["paymentMethod"],
+            paymentStatus: ord.paymentStatus as AdminOrder["paymentStatus"],
+            orderStatus: ord.orderStatus as AdminOrder["orderStatus"],
+            createdAt: ord.createdAt,
+            shippingAddress: ord.shippingAddress,
+            shippingCity: ord.shippingCity,
+            courier: ord.courier,
+            trackingCode: ord.trackingCode,
+            estimatedDelivery: ord.estimatedDelivery,
+            timeline: Array.isArray(ord.timeline) ? ord.timeline : [],
+            notes: ord.notes || undefined,
+          }));
+          setOrders(formattedOrders);
+        }
+      }
+
+      // 4. Fetch live coupons
+      const couponRes = await fetch("/api/coupons");
+      if (couponRes.ok) {
+        const couponData = await couponRes.json();
+        if (Array.isArray(couponData.coupons) && couponData.coupons.length > 0) {
+          setCoupons(
+            couponData.coupons.map((c: {
+              id: string;
+              code: string;
+              discount: string;
+              minSpend?: string;
+              description?: string;
+              active: boolean;
+            }) => ({
+              id: c.id,
+              code: c.code,
+              discountPercent: parseInt(c.discount.replace(/[^0-9]/g, "")) || 10,
+              description: c.description || "",
+              active: c.active,
+              minSpend: parseInt(c.minSpend?.replace(/[^0-9]/g, "") || "0"),
+            }))
+          );
+        }
+      }
+
+      // 5. Fetch CMS store settings
+      const cmsRes = await fetch("/api/cms");
+      if (cmsRes.ok) {
+        const cmsData = await cmsRes.json();
+        if (Array.isArray(cmsData.heroSlides) && cmsData.heroSlides.length > 0) {
+          setHeroSlides(cmsData.heroSlides);
+        }
+        if (cmsData.announcement && cmsData.announcement.text) {
+          setAnnouncement(cmsData.announcement);
+        }
+        if (cmsData.footerConfig && cmsData.footerConfig.brandName) {
+          setFooterConfig(cmsData.footerConfig);
+        }
+        if (Array.isArray(cmsData.sizes) && cmsData.sizes.length > 0) {
+          setSizes(cmsData.sizes);
+        }
+        if (Array.isArray(cmsData.colors) && cmsData.colors.length > 0) {
+          setColors(cmsData.colors);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load initial data from Neon PostgreSQL:", e);
     }
-    setMounted(true);
   }, []);
 
-  // Save to localStorage when state changes
   useEffect(() => {
-    if (!mounted) return;
+    refreshDatabase();
+  }, [refreshDatabase]);
+
+  // Sync CMS block changes to Neon DB
+  const syncCMSToDatabase = async (payload: {
+    heroSlides?: HeroSlide[];
+    announcement?: AnnouncementConfig;
+    footerConfig?: FooterConfig;
+    sizes?: VariationSize[];
+    colors?: VariationColor[];
+  }) => {
     try {
-      localStorage.setItem(
-        CMS_STORAGE_KEY,
-        JSON.stringify({
-          heroSlides,
-          announcement,
-          footerConfig,
-          coupons,
-          categories,
-          reviews,
-          products,
-          orders,
-          customers,
-          sizes,
-          colors,
-        })
-      );
+      await fetch("/api/cms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
     } catch {
-      // Storage quota or error safe guard
+      // Graceful error handling
     }
-  }, [
-    heroSlides,
-    announcement,
-    footerConfig,
-    coupons,
-    categories,
-    reviews,
-    products,
-    orders,
-    customers,
-    sizes,
-    colors,
-    mounted,
-  ]);
+  };
 
   // Hero Slides
   const updateHeroSlide = (id: string, updates: Partial<HeroSlide>) => {
-    setHeroSlides((prev) =>
-      prev.map((slide) => (slide.id === id ? { ...slide, ...updates } : slide))
+    const updated = heroSlides.map((slide) =>
+      slide.id === id ? { ...slide, ...updates } : slide
     );
+    setHeroSlides(updated);
+    syncCMSToDatabase({ heroSlides: updated });
   };
 
   const addHeroSlide = (slide: Omit<HeroSlide, "id">) => {
@@ -187,51 +303,111 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...slide,
       id: `slide-${Date.now()}`,
     };
-    setHeroSlides((prev) => [...prev, newSlide]);
+    const updated = [...heroSlides, newSlide];
+    setHeroSlides(updated);
+    syncCMSToDatabase({ heroSlides: updated });
   };
 
   const deleteHeroSlide = (id: string) => {
-    setHeroSlides((prev) => prev.filter((slide) => slide.id !== id));
+    const updated = heroSlides.filter((slide) => slide.id !== id);
+    setHeroSlides(updated);
+    syncCMSToDatabase({ heroSlides: updated });
   };
 
   // Announcement
   const updateAnnouncement = (updates: Partial<AnnouncementConfig>) => {
-    setAnnouncement((prev) => ({ ...prev, ...updates }));
+    const updated = { ...announcement, ...updates };
+    setAnnouncement(updated);
+    syncCMSToDatabase({ announcement: updated });
   };
 
   // Footer
   const updateFooter = (updates: Partial<FooterConfig>) => {
-    setFooterConfig((prev) => ({ ...prev, ...updates }));
+    const updated = { ...footerConfig, ...updates };
+    setFooterConfig(updated);
+    syncCMSToDatabase({ footerConfig: updated });
   };
 
   // Coupons
-  const addCoupon = (coupon: Omit<CouponConfig, "id">) => {
+  const addCoupon = async (coupon: Omit<CouponConfig, "id">) => {
     const newCoupon: CouponConfig = {
       ...coupon,
       id: `coupon-${Date.now()}`,
     };
     setCoupons((prev) => [...prev, newCoupon]);
+    try {
+      await fetch("/api/coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create",
+          code: coupon.code,
+          discount: `${coupon.discountPercent}% OFF`,
+          minSpend: coupon.minSpend ? `Min. spend ৳${coupon.minSpend}` : undefined,
+          description: coupon.description,
+          active: coupon.active,
+        }),
+      });
+    } catch {
+      // Fallback
+    }
   };
 
-  const toggleCoupon = (id: string) => {
+  const toggleCoupon = async (id: string) => {
     setCoupons((prev) =>
       prev.map((c) => (c.id === id ? { ...c, active: !c.active } : c))
     );
+    try {
+      await fetch("/api/coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle", id }),
+      });
+    } catch {
+      // Fallback
+    }
   };
 
-  const deleteCoupon = (id: string) => {
+  const deleteCoupon = async (id: string) => {
     setCoupons((prev) => prev.filter((c) => c.id !== id));
+    try {
+      await fetch("/api/coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id }),
+      });
+    } catch {
+      // Fallback
+    }
   };
 
   // Categories
-  const addCategory = (category: CategoryItem) => {
+  const addCategory = async (category: CategoryItem) => {
     setCategories((prev) => [...prev, category]);
+    try {
+      await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(category),
+      });
+    } catch {
+      // Fallback
+    }
   };
 
-  const updateCategory = (id: string, updates: Partial<CategoryItem>) => {
+  const updateCategory = async (id: string, updates: Partial<CategoryItem>) => {
     setCategories((prev) =>
       prev.map((cat) => (cat.id === id ? { ...cat, ...updates } : cat))
     );
+    try {
+      await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...updates }),
+      });
+    } catch {
+      // Fallback
+    }
   };
 
   const deleteCategory = (id: string) => {
@@ -262,26 +438,58 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Products
-  const addProduct = (prod: Product) => {
+  const addProduct = async (prod: Product) => {
     setProducts((prev) => [prod, ...prev]);
+    try {
+      await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(prod),
+      });
+    } catch {
+      // Fallback
+    }
   };
 
-  const updateProduct = (id: string, updates: Partial<Product>) => {
+  const updateProduct = async (id: string, updates: Partial<Product>) => {
     setProducts((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
     );
+    try {
+      await fetch(`/api/products/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+    } catch {
+      // Fallback
+    }
   };
 
-  const deleteProduct = (id: string) => {
+  const deleteProduct = async (id: string) => {
     setProducts((prev) => prev.filter((p) => p.id !== id));
+    try {
+      await fetch(`/api/products/${id}`, { method: "DELETE" });
+    } catch {
+      // Fallback
+    }
   };
 
   // Orders
-  const addOrder = (newOrder: AdminOrder) => {
+  const addOrder = async (newOrder: AdminOrder) => {
     setOrders((prev) => [newOrder, ...prev]);
+    try {
+      await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newOrder),
+      });
+    } catch {
+      // Fallback
+    }
   };
 
-  const updateOrderStatus = (orderId: string, status: AdminOrderStatus) => {
+  const updateOrderStatus = async (orderId: string, status: AdminOrderStatus) => {
     setOrders((prev) =>
       prev.map((ord) => {
         if (ord.id === orderId) {
@@ -306,6 +514,15 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return ord;
       })
     );
+    try {
+      await fetch(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderStatus: status }),
+      });
+    } catch {
+      // Fallback
+    }
   };
 
   // Customers
@@ -325,31 +542,39 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Variations (Sizes & Colors) CRUD
   const addSize = (size: VariationSize) => {
-    setSizes((prev) => [...prev, size]);
+    const updated = [...sizes, size];
+    setSizes(updated);
+    syncCMSToDatabase({ sizes: updated });
   };
 
   const updateSize = (id: string, updates: Partial<VariationSize>) => {
-    setSizes((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
-    );
+    const updated = sizes.map((s) => (s.id === id ? { ...s, ...updates } : s));
+    setSizes(updated);
+    syncCMSToDatabase({ sizes: updated });
   };
 
   const deleteSize = (id: string) => {
-    setSizes((prev) => prev.filter((s) => s.id !== id));
+    const updated = sizes.filter((s) => s.id !== id);
+    setSizes(updated);
+    syncCMSToDatabase({ sizes: updated });
   };
 
   const addColor = (color: VariationColor) => {
-    setColors((prev) => [...prev, color]);
+    const updated = [...colors, color];
+    setColors(updated);
+    syncCMSToDatabase({ colors: updated });
   };
 
   const updateColor = (id: string, updates: Partial<VariationColor>) => {
-    setColors((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ...updates } : c))
-    );
+    const updated = colors.map((c) => (c.id === id ? { ...c, ...updates } : c));
+    setColors(updated);
+    syncCMSToDatabase({ colors: updated });
   };
 
   const deleteColor = (id: string) => {
-    setColors((prev) => prev.filter((c) => c.id !== id));
+    const updated = colors.filter((c) => c.id !== id);
+    setColors(updated);
+    syncCMSToDatabase({ colors: updated });
   };
 
   // Reset
@@ -360,12 +585,9 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCoupons(DEFAULT_COUPONS);
     setCategories(DEFAULT_CATEGORIES);
     setReviews(DEFAULT_REVIEWS);
-    setProducts(MOCK_PRODUCTS);
-    setOrders(MOCK_ORDERS);
-    setCustomers(MOCK_CUSTOMERS);
     setSizes(DEFAULT_SIZES);
     setColors(DEFAULT_COLORS);
-    localStorage.removeItem(CMS_STORAGE_KEY);
+    refreshDatabase();
   };
 
   return (
@@ -410,6 +632,7 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addColor,
         updateColor,
         deleteColor,
+        refreshDatabase,
         resetToDefaults,
       }}
     >
